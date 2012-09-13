@@ -1,6 +1,6 @@
 all: swarm.scala
 	scalac swarm.scala
-	scala -cp . HelloWorld
+	scala -cp . runtime.Main
 
 .PHONY: clean
 clean:
