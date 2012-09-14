@@ -1,3 +1,7 @@
+pez: pez.scala
+	scalac pez.scala
+	scala -cp . runtime.Main
+
 simple: simple.scala
 	scalac simple.scala
 	scala -cp . runtime.Main
