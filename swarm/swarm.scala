@@ -1,58 +1,99 @@
 
 package swarm {
 
-    class Coordinate {
-        private var xPoint = 0
-        private var yPoint = 0
+  import scala.actors._
+  import scala.actors.Actor._
+  import scala.util.Random
 
-        def get_x() = xPoint
-        def get_y() = yPoint
+  case object Ready
+  case object Wall
+  case object End
 
-        def set_coords(x: Int, y: Int) {
-            xPoint = x
-            yPoint = y
+  class Point (var x: Int, var y: Int) {
+    override def toString() = "(" + x + ", " + y + ")"
+  }
+
+  class Node(name: String, grid: Actor) extends Actor {
+    var p = new Point(0, 0)
+    var direction = 0
+
+    def moveNode() {
+      if (direction == 0) {
+        p.x = p.x + 1
+      } else {
+        p.x = p.x - 1
+      }
+      grid ! p
+    }
+
+    def changeDirection() {
+      p.y = p.y + 1
+      if (direction == 0) {
+        direction = 1
+      } else {
+        direction = 0
+      }
+      this ! Ready
+    }
+
+    def act() {
+      this ! Ready
+      loop {
+        react {
+          case Ready => moveNode()
+          case Wall => changeDirection()
+          case End => println(name + " has reached the end!"); exit()
         }
+      }
+    }
+  }
 
+  class Grid extends Actor {
+    private val maxColumns = 5
+    private val maxRows = 5
+
+    def processMove(p : Point) {
+      if ((p.x == maxColumns - 1) && (p.y == maxRows - 1)) {
+        sender ! End
+        //exit()
+      } else if (p.x >= 0 && p.x < maxColumns) {
+        //println(p.toString())
+        Thread.sleep(Random.nextInt(1000))
+        sender ! Ready
+      } else {
+        sender ! Wall
+      }
     }
 
-    class Node {
-        private val c = new Coordinate()
-
-        //def get_coords = (c.get_x(), c.get_y())
-    }
-
-    class Grid {
-        private val maxColumns = 40
-        private val maxRows = 20
-
-        def hi() = println("Test")
-
-        def print_board() {
-            for (i <- 1 to maxRows) {
-                for (j <- 1 to maxColumns) {
-                    print(".")
-                }
-                print("\n")
-            }
+    def act() {
+      loop {
+        react {
+          case p: Point => processMove(p)
+          case x: Any   => println("Error: " + x)
         }
+      }
     }
+  }
 
 }
 
 
 package runtime {
 
-    import swarm.Grid
+  import swarm.Grid
 
     object Main extends App {
-        println("Hello, world!")
+      println("Swarm the grid!")
 
-        val g = new swarm.Grid()
-        val n = new swarm.Node()
+      val g = new swarm.Grid()
+      val a = new swarm.Node("A", g)
+      val b = new swarm.Node("B", g)
+      val c = new swarm.Node("C", g)
 
-        g.hi()
-        g.print_board()
-
+      g.start()
+      a.start()
+      b.start()
+      c.start()
     }
 
 }
